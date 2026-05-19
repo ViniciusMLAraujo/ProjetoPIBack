@@ -2,11 +2,16 @@ import express from 'express'
 import { env } from './config/env'
 import { errorMiddleware } from './shared/middlewares/error.middleware'
 import authRoutes from './modules/auth/auth.routes'
+import studentsRoutes from './modules/students/students.routes'
+import coursesRoutes from './modules/courses/courses.routes'
 
 const app = express()
 
 app.use(express.json())
 
+app.use('/api/students', studentsRoutes)
+
+app.use('/api/courses', coursesRoutes)
 
 app.use('/api/auth', authRoutes)
 
