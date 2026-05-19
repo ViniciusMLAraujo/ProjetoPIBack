@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String             @id @default(uuid())
+  email               String             @unique
+  password            String
+  role                Role               @default(STUDENT)
+  student             Student?
+  attendanceRecords   AttendanceRecord[] @relation("ProfessorRecords")
+  createdAt           DateTime           @default(now())
+}
+
+model Student {
+  id         String             @id @default(uuid())
+  name       String
+  enrollment String             @unique
+  user       User               @relation(fields: [userId], references: [id])
+  userId     String             @unique
+  courses    Enrollment[]
+  accesses   AccessLog[]
+  qrTokens   QRToken[]
+  records    AttendanceRecord[]
+}
+
+model Course {
+  id          String       @id @default(uuid())
+  name        String
+  code        String       @unique
+  schedules   Schedule[]
+  enrollments Enrollment[]
+}
+
+model Room {
+  id        String     @id @default(uuid())
+  name      String
+  capacity  Int
+  schedules Schedule[]
+}
+
+model Schedule {
+  id        String             @id @default(uuid())
+  course    Course             @relation(fields: [courseId], references: [id])
+  courseId  String
+  room      Room               @relation(fields: [roomId], references: [id])
+  roomId    String
+  dayOfWeek Int                // 0=Dom, 1=Seg...
+  startTime String             // "08:00"
+  endTime   String             // "10:00"
+  records   AttendanceRecord[]
+}
+
+model Enrollment {
+  student   Student @relation(fields: [studentId], references: [id])
+  studentId String
+  course    Course  @relation(fields: [courseId], references: [id])
+  courseId  String
+
+  @@id([studentId, courseId])
+}
+
+model QRToken {
+  id        String     @id @default(uuid())
+  token     String     @unique
+  student   Student    @relation(fields: [studentId], references: [id])
+  studentId String
+  expiresAt DateTime
+  usedAt    DateTime?
+  access    AccessLog?
+}
+
+model AccessLog {
+  id        String   @id @default(uuid())
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId String
+  qrToken   QRToken  @relation(fields: [qrTokenId], references: [id])
+  qrTokenId String   @unique
+  enteredAt DateTime @default(now())
+  exitAt    DateTime?
+}
+
+model AttendanceRecord {
+  id          String   @id @default(uuid())
+  student     Student  @relation(fields: [studentId], references: [id])
+  studentId   String
+  schedule    Schedule @relation(fields: [scheduleId], references: [id])
+  scheduleId  String
+  professor   User     @relation("ProfessorRecords", fields: [professorId], references: [id])
+  professorId String
+  date        DateTime
+  present     Boolean  @default(false)
+  concept     Concept?
+  createdAt   DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  PROFESSOR
+  STUDENT
+}
+
+enum Concept {
+  NS
+  ANS
+  BOM
+  OTIMO
+  EXCELENTE
+}
