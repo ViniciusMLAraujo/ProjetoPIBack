@@ -8,13 +8,13 @@ datasource db {
 }
 
 model User {
-  id                  String             @id @default(uuid())
-  email               String             @unique
-  password            String
-  role                Role               @default(STUDENT)
-  student             Student?
-  attendanceRecords   AttendanceRecord[] @relation("ProfessorRecords")
-  createdAt           DateTime           @default(now())
+  id                String             @id @default(uuid())
+  email             String             @unique
+  password          String
+  role              Role               @default(STUDENT)
+  student           Student?
+  attendanceRecords AttendanceRecord[] @relation("ProfessorRecords")
+  createdAt         DateTime           @default(now())
 }
 
 model Student {
@@ -50,10 +50,11 @@ model Schedule {
   courseId  String
   room      Room               @relation(fields: [roomId], references: [id])
   roomId    String
-  dayOfWeek Int                // 0=Dom, 1=Seg...
-  startTime String             // "08:00"
-  endTime   String             // "10:00"
+  dayOfWeek Int
+  startTime String
+  endTime   String
   records   AttendanceRecord[]
+  qrTokens  QRToken[]          // ← novo: horário tem vários tokens ao longo do tempo
 }
 
 model Enrollment {
@@ -66,22 +67,27 @@ model Enrollment {
 }
 
 model QRToken {
-  id        String     @id @default(uuid())
-  token     String     @unique
-  student   Student    @relation(fields: [studentId], references: [id])
-  studentId String
-  expiresAt DateTime
-  usedAt    DateTime?
-  access    AccessLog?
+  id         String    @id @default(uuid())
+  token      String    @unique
+  // studentId removido — o token representa a AULA, não um aluno específico
+  // Quem usou fica registrado no AccessLog
+  student    Student?  @relation(fields: [studentId], references: [id])
+  studentId  String?
+  schedule   Schedule  @relation(fields: [scheduleId], references: [id])
+  scheduleId String    // ← novo: qual aula este QR representa
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  access     AccessLog?
 }
 
 model AccessLog {
-  id        String   @id @default(uuid())
-  student   Student  @relation(fields: [studentId], references: [id])
+  id        String    @id @default(uuid())
+  student   Student   @relation(fields: [studentId], references: [id])
   studentId String
-  qrToken   QRToken  @relation(fields: [qrTokenId], references: [id])
-  qrTokenId String   @unique
-  enteredAt DateTime @default(now())
+  qrToken   QRToken   @relation(fields: [qrTokenId], references: [id])
+  qrTokenId String    @unique
+  enteredAt DateTime  @default(now())
   exitAt    DateTime?
 }
 
