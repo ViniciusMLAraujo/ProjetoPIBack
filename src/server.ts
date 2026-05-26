@@ -9,6 +9,7 @@ import studentsRoutes from './modules/students/students.routes'
 import coursesRoutes from './modules/courses/courses.routes'
 import roomsRoutes from './modules/rooms/room.routes'
 import schedulesRoutes from './modules/schedules/schedules.routes'
+import qrcodeRoutes from './modules/qrcode/qrcode.routes'
 
 const app = express()
 
@@ -47,6 +48,7 @@ app.use('/api/students', studentsRoutes)
 app.use('/api/courses', coursesRoutes)
 app.use('/api/rooms', roomsRoutes)
 app.use('/api/schedules', schedulesRoutes)
+app.use('/api/qrcode', qrcodeRoutes)
 
 // ─── Error handler — sempre o último ─────────────────────────────────────────
 app.use(errorMiddleware)
