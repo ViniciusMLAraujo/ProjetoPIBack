@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+*.txt
+!readme.md
+coverage/
+.DS_Store

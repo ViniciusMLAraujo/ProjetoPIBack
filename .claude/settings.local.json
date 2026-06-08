@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\gilbe\\\\Downloads\\\\ProjetoPIBack-feat-projeto-consolidado\\\\ProjetoPIBack-feat-projeto-consolidado\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(ConvertTo-Csv -NoTypeInformation)",
+      "Bash(Out-String)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(Expand-Archive -Path \"C:\\\\Users\\\\gilbe\\\\Downloads\\\\Smart-Campus-merge.zip\" -DestinationPath \"C:\\\\Users\\\\gilbe\\\\Downloads\\\\Smart-Campus-merge\" -Force)",
+      "Bash(Get-ChildItem \"C:\\\\Users\\\\gilbe\\\\Downloads\\\\Smart-Campus-merge\" -Recurse -Depth 3)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3100/health)",
+      "Bash(kill %1)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 39424)"
+    ]
+  }
+}
