@@ -6,6 +6,10 @@
 Stack: `Node.js` · `TypeScript` · `Express` · `Prisma` · `PostgreSQL` · `MQTT` · `JWT` · `Zod`
 
 ---
+## Links de Acesso
+- 📄 Documentação (PDF): https://drive.google.com/drive/folders/1lfU03CTqzepUgFVrY8skikwuAItdE72g
+- 💻 Backend: https://github.com/ViniciusMLAraujo/ProjetoPIBack/tree/feat/roni-foundations
+- 📱 Frontend: https://github.com/isabel-vit309/Front-Smart-Campus
 
 ## Sumário
 
