@@ -12,11 +12,13 @@ import roomsRoutes from './modules/rooms/room.routes'
 import schedulesRoutes from './modules/schedules/schedules.routes'
 import qrcodeRoutes from './modules/qrcode/qrcode.routes'
 import accessRoutes from './modules/access/access.routes'
+import swaggerUi from 'swagger-ui-express'
+import { swaggerSpec } from './config/swagger'
 
 const app = express()
 
 // ─── Segurança ────────────────────────────────────────────────────────────────
-app.use(helmet())
+app.use(helmet({ contentSecurityPolicy: false }))
 app.use(cors())
 
 const globalLimiter = rateLimit({
@@ -36,6 +38,12 @@ const authLimiter: RequestHandler = rateLimit({
 
 // ─── Parsing ──────────────────────────────────────────────────────────────────
 app.use(express.json())
+
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+app.get('/api/docs.json', (_req, res) => {
+  res.setHeader('Content-Type', 'application/json')
+  res.send(swaggerSpec)
+})
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
@@ -57,9 +65,10 @@ app.use(errorMiddleware)
 // ─── MQTT ─────────────────────────────────────────────────────────────────────
 if (process.env.NODE_ENV !== 'test') {
   initMQTT()
-  app.listen(env.PORT, () => {
-    console.log(`🚀 Server running on port ${env.PORT}`)
-  })
+app.listen(env.PORT, () => {
+  console.log(`🚀 Server running on port ${env.PORT}`)
+  console.log(`📚 Swagger UI disponível em http://localhost:${env.PORT}/api/docs`)
+})
 }
 
 export default app
