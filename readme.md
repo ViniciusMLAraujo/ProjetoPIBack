@@ -1,375 +1,541 @@
-# 🎓 University Access — Backend
+# 🎓Smart Campus
 
-> Sistema IoT de controle de acesso universitário com QR Code dinâmico, registro acadêmico e painel administrativo em tempo real.
+> IoT-based university access control system featuring dynamic QR codes, academic record integration, and a real-time administrative dashboard. Developed as a Capstone Project for the **Systems Analysis and Development Program** at **Senac College**.
 
-**Projeto Acadêmico SENAC · Equipe Backend · 2026**  
-Stack: `Node.js` · `TypeScript` · `Express` · `Prisma` · `PostgreSQL` · `MQTT` · `JWT` · `Zod`
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE) 
+[![Senac](https://img.shields.io/badge/Institution-Senac%20College-blue)](https://www.senac.br/) 
+[![LGPD](https://img.shields.io/badge/Compliance-LGPD%20Ready-blueviolet)](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm) 
+
+
+---
+## 📋 Project Overview
+
+**Smart Campus** is an IoT-based university access control system designed to improve campus security and attendance management through dynamic QR Code authentication. The platform integrates a mobile application, cloud services, and embedded hardware to provide a secure, real-time access management solution.
+
+### Key Features
+
+* **Dynamic QR Code Access:** Students generate temporary QR Codes through a mobile application for secure campus entry.
+
+* **ESP32-Powered Turnstile Control:** An ESP32 device installed at the entrance validates QR Codes and controls physical access.
+
+* **Real-Time Access Logging:** Every entry and exit is automatically recorded in a centralized database, enabling complete access history tracking.
+
+* **Administrative Dashboard:** Administrators can monitor access events, review attendance records, and manage users in real time.
+
+* **Cloud-Based Architecture:** The solution combines a cloud-hosted REST API, a managed relational database, and IoT hardware in an end-to-end integrated ecosystem.
+
+--- 
+
+## 🔒 LGPD & Data Privacy Compliance (Lei Geral de Proteção de Dados)
+
+Because this application processes **Personal Data** related to student identification and campus access records, privacy and data protection were considered fundamental requirements throughout the development process, in compliance with Brazilian Federal Law nº 13.709/2018 (LGPD).
+
+### Implemented Privacy Standards
+
+* **Legal Basis for Processing (Art. 7º):** Personal data is collected exclusively for authentication, access control, attendance management, and campus security purposes. User registration and data processing are performed with the knowledge and consent of the student.
+
+* **Data Minimization:** Only the information strictly necessary for user identification and access validation is stored, such as student ID, academic information, and access logs.
+
+* **Access History Management:** Entry and exit records are securely stored and made available only to authorized administrators for operational and security purposes.
+
+* **User Rights (Art. 18):** The platform provides mechanisms for users to:
+
+  * Access their registered personal information.
+  * Request correction of inaccurate or outdated data.
+  * Request the deletion of their account and associated personal data when legally applicable.
+
+* **Security Measures (Art. 46):** User credentials are protected using industry-standard password hashing techniques (bcrypt), while all communications between the mobile application, API, database, and IoT devices are performed through secure protocols.
+
+* **Controlled Access to Data:** Administrative features are protected by authentication and authorization mechanisms, ensuring that sensitive information can only be accessed by authorized personnel.
+
+--- 
+
+## 🛠️ Tech Stack
+
+* **Mobile Application:** React Native, TypeScript
+
+* **Backend:** Node.js, Express.js, TypeScript
+
+* **Database:** PostgreSQL, Prisma ORM
+
+* **IoT Communication:** MQTT Protocol, ESP32
+
+* **Authentication & Security:** JWT (JSON Web Tokens)
+
+* **Data Validation:** Zod
+
+* **Architecture:** REST API integrated with cloud services and IoT devices for real-time access control
+
+--- 
+
+
+## 👥 User Roles
+
+| Role              | Responsibilities                                                                                               |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Student**       | Generates dynamic QR Codes, accesses campus facilities, and views attendance records and academic evaluations. |
+| **Professor**     | Records attendance and submits academic evaluations for each class session.                                    |
+| **Administrator** | Monitors real-time building occupancy, analyzes access flow reports, and manages users and permissions.        |
 
 ---
 
-## Sumário
+## 🏗️ System Architecture
 
-- [Visão geral](#visão-geral)
-- [Arquitetura](#arquitetura)
-- [Pré-requisitos](#pré-requisitos)
-- [Configuração do ambiente](#configuração-do-ambiente)
-- [Banco de dados](#banco-de-dados)
-- [Rodando o servidor](#rodando-o-servidor)
-- [Testes](#testes)
-- [Estrutura do projeto](#estrutura-do-projeto)
-- [Endpoints disponíveis](#endpoints-disponíveis)
-- [Autenticação](#autenticação)
-- [Fluxo do QR Code](#fluxo-do-qr-code)
-- [Divisão de responsabilidades](#divisão-de-responsabilidades)
-- [Padrão de commits](#padrão-de-commits)
-- [Variáveis de ambiente](#variáveis-de-ambiente)
-
----
-
-## Visão geral
-
-O sistema substitui o crachá físico universitário por um **QR Code dinâmico** gerado no app mobile. O aluno aponta o QR para a catraca, o ESP32 lê e publica via MQTT, o backend valida e responde com `OPEN` ou `DENY`. Em paralelo, professores lançam presença e conceitos pelo painel — fluxo completamente independente do acesso físico.
-
-### O que cada perfil faz
-
-| Perfil | Ação |
-|---|---|
-| **Aluno** | Gera QR Code, acessa o prédio, consulta presenças e conceitos |
-| **Professor** | Lança presença e conceito por aula |
-| **Admin** | Vê quem está no prédio agora, relatórios de fluxo, gestão de usuários |
-
----
-
-## Arquitetura
-
-```
+```text
 ┌─────────────────┐     MQTT      ┌──────────────────────┐     REST/JSON    ┌──────────────────┐
-│  ESP32 + Câmera │ ────────────► │  Backend Node.js      │ ◄─────────────── │  App React Native │
-│  (catraca)      │ ◄──────────── │  (este repositório)   │                  │  (outra equipe)  │
+│  ESP32 + Camera │ ────────────► │   Node.js Backend    │ ◄─────────────── │ React Native App │
+│   (Turnstile)   │ ◄──────────── │   (This Repository)  │                  │                  │
 └─────────────────┘  OPEN / DENY  └──────────────────────┘                  └──────────────────┘
                                            │
                                            ▼
                                    ┌──────────────┐
-                                   │  PostgreSQL   │
+                                   │ PostgreSQL   │
                                    └──────────────┘
 ```
 
-**Dois protocolos, dois propósitos:**
-- **MQTT** — comunicação leve com o hardware (ESP32 → backend → catraca)
-- **REST/HTTP** — comunicação estruturada com o app mobile (JWT + JSON)
+### Communication Protocols
+
+* **MQTT** — Lightweight communication between IoT devices and the backend (ESP32 ↔ Backend ↔ Turnstile).
+* **REST/HTTP** — Structured communication between the mobile application and backend services (JWT + JSON).
 
 ---
 
-## Pré-requisitos
+## 📦 Prerequisites
 
-- [Node.js](https://nodejs.org/) v20+
-- [Docker](https://www.docker.com/) e Docker Compose
-- [npm](https://www.npmjs.com/) v9+
+Before running the project, make sure you have the following installed:
+
+* Node.js v20+
+* Docker & Docker Compose
+* npm v9+
 
 ---
 
-## Configuração do ambiente
+## ⚙️ Environment Setup
 
-### 1. Clonar o repositório
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/ViniciusMLAraujo/ProjetoPIBack.git
 cd university-access
 ```
 
-### 2. Instalar dependências
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configurar variáveis de ambiente
+### 3. Configure Environment Variables
 
 ```bash
 cp .env.example .env
 ```
 
-Edite o `.env` com suas credenciais. Veja a seção [Variáveis de ambiente](#variáveis-de-ambiente) para detalhes.
+Update the `.env` file with your local credentials and configuration values.
 
 ---
 
-## Banco de dados
+## 🗄️ Database Setup
 
-### Subir o PostgreSQL via Docker
+### Start PostgreSQL with Docker
 
 ```bash
 docker-compose up -d
 ```
 
-### Rodar as migrations
+### Run Migrations
 
 ```bash
 npx prisma migrate dev
 ```
 
-### Gerar o cliente Prisma (após qualquer mudança no schema)
+### Generate Prisma Client
 
 ```bash
 npx prisma generate
 ```
 
-### Popular o banco com dados iniciais (seed)
+### Seed Initial Data
 
 ```bash
 npm run db:seed
 ```
 
-Cria um usuário admin padrão:
-- **Email:** `admin@teste.com`
-- **Senha:** `123456`
+A default administrator account will be created:
 
-> ⚠️ Use apenas em desenvolvimento. Nunca rode o seed em produção.
+| Field    | Value             |
+| -------- | ----------------- |
+| Email    | `admin@teste.com` |
+| Password | `123456`          |
 
-### Visualizar o banco no navegador
+> ⚠️ Development environment only. Never execute seed scripts in production.
+
+### Open Prisma Studio
 
 ```bash
 npm run db:studio
-# Abre em http://localhost:5555
+```
+
+Available at:
+
+```text
+http://localhost:5555
 ```
 
 ---
 
-## Rodando o servidor
+## 🚀 Running the Application
+
+### Development Mode
 
 ```bash
-# Desenvolvimento (hot reload)
 npm run dev
+```
 
-# Produção
+### Production Mode
+
+```bash
 npm run build
 npm start
 ```
 
-O servidor sobe em `http://localhost:3000` (ou na porta definida em `PORT` no `.env`).
+The API will be available at:
 
-Verifique se está rodando:
+```text
+http://localhost:3000
+```
+
+Or the port configured through the `PORT` environment variable.
+
+### Health Check
+
 ```bash
 curl http://localhost:3000/health
-# { "status": "ok", "timestamp": "..." }
+```
+
+Expected response:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "..."
+}
 ```
 
 ---
 
-## Testes
+## 🧪 Testing
+
+Run all automated tests:
 
 ```bash
-# Rodar todos os testes
 npm test
+```
 
-# Com relatório de cobertura
+Generate a coverage report:
+
+```bash
 npm run test:coverage
 ```
 
-Os testes usam **Jest + ts-jest** com mocks do Prisma — nenhuma conexão real com banco é necessária. A cobertura mínima exigida é 70% em branches, funções e linhas.
+### Testing Stack
 
-### Testes implementados (Sprint 1)
+* **Jest**
+* **ts-jest**
+* **Prisma Mocks**
 
-| Arquivo | Casos cobertos |
-|---|---|
-| `auth.service.test.ts` | login com usuário inexistente, senha errada, login válido; createUser com e-mail duplicado e com senha hasheada; hashPassword |
-| `auth.middleware.test.ts` | requisição sem token, token inválido, token válido populando `req.user`; requireRole bloqueando e permitindo roles |
-| `auth.routes.test.ts` | POST /login com body inválido, usuário inexistente e login válido; GET /me sem token e com token; GET /health |
+No real database connection is required during test execution.
+
+### Coverage Requirements
+
+Minimum coverage threshold:
+
+* **70% Branches**
+* **70% Functions**
+* **70% Lines**
+* **70% Statements**
+
 
 ---
 
-## Estrutura do projeto
+## 📂 Project Structure
 
-```
+```text
 university-access/
 ├── prisma/
-│   ├── schema.prisma          # Blueprint do banco — todas as tabelas e relações
-│   ├── seed.ts                # Popula o banco com dados iniciais de teste
-│   └── migrations/            # Histórico de mudanças no banco (gerado pelo Prisma)
+│   ├── schema.prisma          # Database blueprint — all tables and relationships
+│   ├── seed.ts                # Seeds the database with initial test data
+│   └── migrations/            # Database migration history (generated by Prisma)
 │
 ├── src/
 │   ├── config/
-│   │   ├── env.ts             # Lê e valida variáveis de ambiente
-│   │   └── prisma.ts          # Instância singleton do PrismaClient
+│   │   ├── env.ts             # Reads and validates environment variables
+│   │   └── prisma.ts          # PrismaClient singleton instance
 │   │
-│   ├── modules/               # Funcionalidades — um módulo por domínio
-│   │   ├── auth/              # Login, JWT, criação de usuário ✅ Sprint 1
-│   │   ├── students/          # CRUD de alunos 🔜 Sprint 1 (Dev 2)
-│   │   ├── courses/           # CRUD de disciplinas 🔜 Sprint 1 (Dev 2)
-│   │   ├── rooms/             # CRUD de salas 🔜 Sprint 1 (Dev 3)
-│   │   ├── schedules/         # CRUD de horários 🔜 Sprint 1 (Dev 3)
-│   │   ├── qrcode/            # Geração e validação de QR Code 🔜 Sprint 2
-│   │   ├── access/            # Registro de entrada/saída + MQTT 🔜 Sprint 2
-│   │   ├── attendance/        # Presença e conceitos acadêmicos 🔜 Sprint 3
-│   │   └── reports/           # Relatórios e painel admin 🔜 Sprint 3
+│   ├── modules/               # Business modules — one module per domain
+│   │   ├── auth/              # Authentication, JWT, user creation ✅ Sprint 1
+│   │   ├── students/          # Student CRUD 🔜 Sprint 1 (Dev 2)
+│   │   ├── courses/           # Course CRUD 🔜 Sprint 1 (Dev 2)
+│   │   ├── rooms/             # Room CRUD 🔜 Sprint 1 (Dev 3)
+│   │   ├── schedules/         # Schedule CRUD 🔜 Sprint 1 (Dev 3)
+│   │   ├── qrcode/            # QR Code generation and validation 🔜 Sprint 2
+│   │   ├── access/            # Entry/exit logging + MQTT 🔜 Sprint 2
+│   │   ├── attendance/        # Attendance and academic evaluations 🔜 Sprint 3
+│   │   └── reports/           # Reports and admin dashboard 🔜 Sprint 3
 │   │
 │   ├── shared/
 │   │   ├── middlewares/
-│   │   │   ├── auth.middleware.ts   # authMiddleware + requireRole ✅
-│   │   │   └── error.middleware.ts  # Handler global de erros ✅
-│   │   ├── utils/             # Funções auxiliares genéricas
-│   │   └── mqtt/              # Cliente MQTT 🔜 Sprint 2
+│   │   │   ├── auth.middleware.ts   # Authentication + role authorization ✅
+│   │   │   └── error.middleware.ts  # Global error handler ✅
+│   │   ├── utils/             # Shared utility functions
+│   │   └── mqtt/              # MQTT client 🔜 Sprint 2
 │   │
-│   ├── __mocks__/             # Mocks do Prisma para os testes
-│   ├── __tests__/             # Testes automatizados
-│   └── server.ts              # Ponto de entrada — Express + rotas
+│   ├── __mocks__/             # Prisma mocks for testing
+│   ├── __tests__/             # Automated tests
+│   └── server.ts              # Application entry point (Express + routes)
 │
-├── .env.example               # Modelo de variáveis de ambiente
+├── .env.example               # Environment variables template
 ├── jest.config.js
 ├── tsconfig.json
 └── package.json
 ```
 
-Cada módulo segue o padrão de três arquivos:
+### Module Pattern
 
-| Arquivo | Responsabilidade |
-|---|---|
-| `service.ts` | Lógica de negócio, acesso ao banco via Prisma |
-| `routes.ts` | Definição de endpoints, validação com Zod, repasse de erros |
-| `validation.ts` | Schemas Zod reutilizáveis |
+Each module follows a three-file architecture:
 
----
-
-## Endpoints disponíveis
-
-### Implementados (Sprint 1) ✅
-
-| Método | Endpoint | Acesso | Descrição |
-|---|---|---|---|
-| `POST` | `/api/auth/login` | Público | Login — retorna token JWT |
-| `GET` | `/api/auth/me` | Autenticado | Dados do usuário logado |
-| `GET` | `/health` | Público | Health check do servidor |
-
-### Planejados
-
-| Método | Endpoint | Acesso | Sprint |
-|---|---|---|---|
-| `GET` | `/api/students` | ADMIN, PROFESSOR | Dev 2 · S1 |
-| `POST` | `/api/students` | ADMIN | Dev 2 · S1 |
-| `GET` | `/api/courses` | Autenticado | Dev 2 · S1 |
-| `POST` | `/api/courses` | ADMIN | Dev 2 · S1 |
-| `GET` | `/api/rooms` | Autenticado | Dev 3 · S1 |
-| `POST` | `/api/rooms` | ADMIN | Dev 3 · S1 |
-| `GET` | `/api/schedules` | Autenticado | Dev 3 · S1 |
-| `POST` | `/api/qrcode/generate` | STUDENT | Dev 2 · S2 |
-| `POST` | `/api/qrcode/validate` | Interno (MQTT) | Dev 3 · S2 |
-| `GET` | `/api/access/now` | ADMIN | Dev 1 · S2 |
-| `POST` | `/api/access/exit` | STUDENT, ADMIN | Dev 1 · S2 |
-| `POST` | `/api/attendance` | PROFESSOR | Dev 1 · S3 |
-| `GET` | `/api/students/:id/history` | ADMIN, PROF, próprio | Dev 2 · S3 |
-| `GET` | `/api/reports/flow` | ADMIN | Dev 1 · S3 |
+| File            | Responsibility                                             |
+| --------------- | ---------------------------------------------------------- |
+| `service.ts`    | Business logic and database access through Prisma          |
+| `routes.ts`     | Endpoint definitions, Zod validation, and error forwarding |
+| `validation.ts` | Reusable Zod schemas                                       |
 
 ---
 
-## Autenticação
+## 🔌 Available Endpoints
 
-O sistema usa **JWT (JSON Web Token)**. O fluxo é:
+### ✅ Implemented (Sprint 1)
 
-1. `POST /api/auth/login` com `{ email, password }` → recebe `{ token, role }`
-2. Todas as rotas protegidas exigem o header: `Authorization: Bearer <token>`
-3. O token expira em `JWT_EXPIRES_IN` (padrão: `8h`)
+| Method | Endpoint          | Access        | Description                                            |
+| ------ | ----------------- | ------------- | ------------------------------------------------------ |
+| `POST` | `/api/auth/login` | Public        | Login endpoint — returns a JWT token                   |
+| `GET`  | `/api/auth/me`    | Authenticated | Returns information about the currently logged-in user |
+| `GET`  | `/health`         | Public        | Server health check                                    |
 
-### Roles disponíveis
+### 🚧 Planned Endpoints
 
-| Role | Descrição |
-|---|---|
-| `ADMIN` | Acesso total ao sistema |
-| `PROFESSOR` | Lança presença e consulta alunos |
-| `STUDENT` | Gera QR Code, consulta próprios dados |
+| Method | Endpoint                    | Access                  | Sprint     |
+| ------ | --------------------------- | ----------------------- | ---------- |
+| `GET`  | `/api/students`             | ADMIN, PROFESSOR        | Dev 2 · S1 |
+| `POST` | `/api/students`             | ADMIN                   | Dev 2 · S1 |
+| `GET`  | `/api/courses`              | Authenticated           | Dev 2 · S1 |
+| `POST` | `/api/courses`              | ADMIN                   | Dev 2 · S1 |
+| `GET`  | `/api/rooms`                | Authenticated           | Dev 3 · S1 |
+| `POST` | `/api/rooms`                | ADMIN                   | Dev 3 · S1 |
+| `GET`  | `/api/schedules`            | Authenticated           | Dev 3 · S1 |
+| `POST` | `/api/qrcode/generate`      | STUDENT                 | Dev 2 · S2 |
+| `POST` | `/api/qrcode/validate`      | Internal (MQTT)         | Dev 3 · S2 |
+| `GET`  | `/api/access/now`           | ADMIN                   | Dev 1 · S2 |
+| `POST` | `/api/access/exit`          | STUDENT, ADMIN          | Dev 1 · S2 |
+| `POST` | `/api/attendance`           | PROFESSOR               | Dev 1 · S3 |
+| `GET`  | `/api/students/:id/history` | ADMIN, PROFESSOR, Owner | Dev 2 · S3 |
+| `GET`  | `/api/reports/flow`         | ADMIN                   | Dev 1 · S3 |
 
-### Protegendo uma rota nova
+---
 
-```typescript
+## 🔐 Authentication
+
+The system uses **JWT (JSON Web Tokens)** for authentication.
+
+### Authentication Flow
+
+1. Send a `POST /api/auth/login` request with `{ email, password }`.
+2. The API returns `{ token, role }`.
+3. All protected routes require the following header:
+
+```http
+Authorization: Bearer <token>
+```
+
+4. Tokens expire according to the `JWT_EXPIRES_IN` environment variable (default: `8h`).
+
+### Available Roles
+
+| Role        | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| `ADMIN`     | Full system access                                            |
+| `PROFESSOR` | Records attendance and manages academic information           |
+| `STUDENT`   | Generates QR Codes and accesses personal academic information |
+
+
+## 🛡️ Protecting New Routes
+
+Use the authentication and authorization middlewares to secure endpoints based on user roles.
+
+```typescript id="bq2m2x"
 import { authMiddleware, requireRole } from '../../shared/middlewares/auth.middleware'
 import { Role } from '@prisma/client'
 
-// Apenas autenticado
-router.get('/rota', authMiddleware, handler)
+// Authenticated users only
+router.get('/route', authMiddleware, handler)
 
-// Apenas ADMIN
-router.delete('/rota/:id', authMiddleware, requireRole(Role.ADMIN), handler)
+// ADMIN only
+router.delete('/route/:id', authMiddleware, requireRole(Role.ADMIN), handler)
 
-// ADMIN ou PROFESSOR
-router.get('/turma', authMiddleware, requireRole(Role.ADMIN, Role.PROFESSOR), handler)
+// ADMIN or PROFESSOR
+router.get(
+  '/classroom',
+  authMiddleware,
+  requireRole(Role.ADMIN, Role.PROFESSOR),
+  handler
+)
 ```
 
 ---
 
-## Fluxo do QR Code
+## 🔳 QR Code Access Flow
 
+```text id="2u2ah7"
+Student opens the mobile app
+    → GET /api/qrcode/generate (authenticated with JWT)
+    → Backend generates a unique UUID
+    → Stores it in the database (QRToken) linked to the Student
+    → Returns a Base64-encoded QR Code image
+
+Student presents the QR Code at the turnstile
+    → ESP32 scans the token
+    → Publishes via MQTT:
+      turnstile/scan { token, studentId }
+
+Backend receives the MQTT message
+    → Validates:
+       • Token existence
+       • Expiration (5 minutes)
+       • Single-use policy
+       • Correct owner
+    → Creates an AccessLog entry with timestamp
+    → Publishes via MQTT:
+       turnstile/command { action: 'OPEN' }
+       or
+       turnstile/command { action: 'DENY' }
+
+ESP32 activates the turnstile motor
 ```
-Aluno abre o app
-    → GET /api/qrcode/generate (com JWT)
-    → backend gera UUID único, salva no banco (QRToken) vinculado ao Student
-    → retorna imagem base64 do QR
 
-Aluno aponta o QR para a catraca
-    → ESP32 lê o token
-    → publica em MQTT: catraca/scan { token, studentId }
+> ⚠️ **Important:** The QR Code only grants physical access through the turnstile. It **does not record classroom attendance**. Attendance is managed separately by professors through the academic module.
 
-Backend recebe via MQTT
-    → valida: existência, expiração (5min), uso único, dono correto
-    → cria AccessLog com timestamp de entrada
-    → publica em MQTT: catraca/command { action: 'OPEN' } ou { action: 'DENY' }
+---
 
-ESP32 aciona o motor da catraca
+## 👨‍💻 Team Responsibilities
+
+| Developer | Sprint 1                                                | Sprint 2               | Sprint 3                                 |
+| --------- | ------------------------------------------------------- | ---------------------- | ---------------------------------------- |
+| **Dev 1** | Database schema, authentication, middlewares, testing ✅ | `access/`, MQTT client | `attendance/`, `reports/`                |
+| **Dev 2** | Students, courses, and enrollment CRUD                  | `qrcode/generate`      | Student history and academic evaluations |
+| **Dev 3** | Rooms and schedules CRUD                                | `qrcode/validate`      | Class attendance management              |
+
+### Repository Ownership
+
+**Dev 1 is responsible for:**
+
+* `prisma/schema.prisma` — All database schema modifications must be reviewed here.
+* `src/shared/middlewares/` — Centralized middleware management.
+* `main` branch — Only Dev 1 can merge into the protected branch after all tests pass successfully.
+
+---
+
+## 📝 Commit Convention
+
+This project follows the **Conventional Commits** specification:
+
+| Prefix      | Usage                                          | Example                                             |
+| ----------- | ---------------------------------------------- | --------------------------------------------------- |
+| `feat:`     | New feature                                    | `feat: add student CRUD module`                     |
+| `fix:`      | Bug fix                                        | `fix: resolve duplicate enrollment validation`      |
+| `refactor:` | Internal improvement without changing behavior | `refactor: move hashing logic to utility functions` |
+| `test:`     | New or updated tests                           | `test: add unit tests for students module`          |
+| `chore:`    | Maintenance tasks                              | `chore: update project dependencies`                |
+| `docs:`     | Documentation updates                          | `docs: update README with new endpoints`            |
+
+### 🌿 Branch Strategy
+
+| Branch                 | Owner | Purpose                                             |
+| ---------------------- | ----- | --------------------------------------------------- |
+| `main`                 | Team  | Stable production-ready codebase (protected branch) |
+| `feat/dev1-foundation` | Dev 1 | Sprint 1 — Schema, authentication, middlewares      |
+| `feat/dev1-mqtt`       | Dev 1 | Sprint 2 — MQTT client and access module            |
+| `feat/dev2-students`   | Dev 2 | Sprint 1 — Students module                          |
+| `feat/dev2-qrcode-gen` | Dev 2 | Sprint 2 — QR Code generation                       |
+| `feat/dev3-rooms`      | Dev 3 | Sprint 1 — Rooms module                             |
+| `feat/dev3-qrcode-val` | Dev 3 | Sprint 2 — QR Code validation                       |
+
+---
+
+## ⚙️ Environment Variables
+
+Copy the example configuration file:
+
+```bash id="hrv8k8"
+cp .env.example .env
 ```
 
-> **Importante:** o QR Code abre a catraca — **não registra presença em aula**. Presença é um fluxo separado, lançado pelo professor.
+Then configure the following variables:
+
+| Variable          | Description                        | Example                                                       |
+| ----------------- | ---------------------------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`    | PostgreSQL connection string       | `postgresql://user:password@localhost:5432/university_access` |
+| `JWT_SECRET`      | Secret key used to sign JWT tokens | Any long, random, secure string                               |
+| `JWT_EXPIRES_IN`  | Token expiration time              | `8h`                                                          |
+| `MQTT_BROKER_URL` | MQTT broker address                | `mqtt://localhost:1883`                                       |
+| `PORT`            | HTTP server port                   | `3000`                                                        |
+
+> ⚠️ **Never commit the `.env` file to Git.** It is already included in `.gitignore` to prevent accidental exposure of sensitive credentials.
+---
+
+## 🚀 Future Improvements
+
+If we had additional development time, we would like to implement:
+
+* **Biometric Authentication:** Add facial recognition or fingerprint verification as a second authentication factor for enhanced campus security.
+
+* **Offline Validation Mode:** Enable temporary offline QR Code validation on ESP32 devices during network outages, synchronizing logs once connectivity is restored.
+
+* **Real-Time Notifications:** Notify students and administrators about successful access events, denied entries, and unusual activity.
+
+* **Advanced Analytics Dashboard:** Provide insights into campus occupancy, peak access hours, attendance trends, and building usage statistics.
+
+* **Visitor Management System:** Allow temporary visitor registration with time-limited QR Codes and approval workflows.
+
+* **Multi-Campus Support:** Extend the platform to manage access across multiple campuses and buildings through a centralized administration panel.
 
 ---
 
-## Divisão de responsabilidades
+## 👥 Authors & Project Team
 
-| Dev | Sprint 1 | Sprint 2 | Sprint 3 |
-|---|---|---|---|
-| **Dev 1** | Schema, auth, middlewares, testes ✅ | `access/`, cliente MQTT | `attendance/`, `reports/` |
-| **Dev 2** | CRUD students, courses, enrollment | `qrcode/generate` | Histórico e conceitos do aluno |
-| **Dev 3** | CRUD rooms, schedules | `qrcode/validate` | Presenças por turma |
+### Mobile Development
 
-**Dev 1 é o guardião de:**
-- `prisma/schema.prisma` — toda mudança de schema passa por aqui
-- `src/shared/middlewares/` — nenhum middleware paralelo
-- Branch `main` — só Dev 1 faz merge após `npm test` passar
+* **Isabel Vitória** — React Native Developer
+* **Lucas Eloi** — React Native Developer
 
----
+### Backend Development
 
-## Padrão de commits
+* **Ronald Paixão** — Backend Developer
+* **Nikolas Martins** — Backend Developer
+* **Vinícius Manoel** — Backend Developer
 
-O projeto segue [Conventional Commits](https://www.conventionalcommits.org/):
+### Hardware & IoT
 
-| Prefixo | Quando usar | Exemplo |
-|---|---|---|
-| `feat:` | Nova funcionalidade | `feat: adiciona CRUD de alunos` |
-| `fix:` | Correção de bug | `fix: corrige validação de matrícula duplicada` |
-| `refactor:` | Melhoria sem mudar comportamento | `refactor: extrai lógica de hash para utils` |
-| `test:` | Testes novos ou corrigidos | `test: adiciona testes do módulo students` |
-| `chore:` | Manutenção | `chore: atualiza dependências` |
-| `docs:` | Documentação | `docs: atualiza README com novos endpoints` |
+* **Amanda Ellen** — Hardware & Embedded Systems Developer
+* **Phelipe Leandro** — Hardware & Embedded Systems Developer
 
-### Branches
+### Project Management
 
-| Branch | Dono | Propósito |
-|---|---|---|
-| `main` | Todos | Código estável — protegida, só Dev 1 mergeia |
-| `feat/dev1-foundation` | Dev 1 | Sprint 1 — schema, auth, middlewares |
-| `feat/dev1-mqtt` | Dev 1 | Sprint 2 — cliente MQTT e access/ |
-| `feat/dev2-students` | Dev 2 | Sprint 1 |
-| `feat/dev2-qrcode-gen` | Dev 2 | Sprint 2 |
-| `feat/dev3-rooms` | Dev 3 | Sprint 1 |
-| `feat/dev3-qrcode-val` | Dev 3 | Sprint 2 |
+* **Gilberto Quintino** — Project Manager
 
----
+### Academic Advisor
 
-## Variáveis de ambiente
+* **Prof. Arnott Caiado**
 
-Copie `.env.example` para `.env` e preencha:
+### Tech English Course Professor
 
-| Variável | Descrição | Exemplo |
-|---|---|---|
-| `DATABASE_URL` | String de conexão PostgreSQL | `postgresql://user:pass@localhost:5432/university_access` |
-| `JWT_SECRET` | Chave secreta para assinar tokens JWT | Qualquer string longa e aleatória |
-| `JWT_EXPIRES_IN` | Tempo de expiração do token | `8h` |
-| `MQTT_BROKER_URL` | URL do broker MQTT | `mqtt://localhost:1883` |
-| `PORT` | Porta do servidor HTTP | `3000` |
-
-> ⚠️ **Nunca** suba o arquivo `.env` para o Git. Ele já está no `.gitignore`.
+* **Prof. Leonardo Trevas**
